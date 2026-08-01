@@ -18,9 +18,9 @@
 #elif CONFIG_OPPO_BSP_SECCOM_PLATFORM == 855 || CONFIG_OPPO_BSP_SECCOM_PLATFORM == 6125 || CONFIG_OPPO_BSP_SECCOM_PLATFORM == 7150 \
 || CONFIG_OPPO_BSP_SECCOM_PLATFORM == 7250 || CONFIG_OPPO_BSP_SECCOM_PLATFORM == 8250 || CONFIG_OPPO_BSP_SECCOM_PLATFORM == 7125 \
 || CONFIG_OPPO_BSP_SECCOM_PLATFORM == 4250 || CONFIG_OPPO_BSP_SECCOM_PLATFORM == 6225
-#include <linux/soc/qcom/smem.h>
+##include <linux/soc/qcom/smem.h>
 #else
-#include <soc/qcom/smem.h>
+##include <soc/qcom/smem.h>
 #endif
 
 #include <linux/slab.h>
