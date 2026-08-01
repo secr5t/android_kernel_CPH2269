@@ -1649,7 +1649,7 @@
 #include "mediatek/sgm4151x.dtsi"
 #include "mediatek/sy697x.dtsi"
 #include "mediatek/tcpc_config_rt1715.dtsi"
-#include "oppo6765_20361/cust.dtsi"
+//#include "oppo6765_20361/cust.dtsi"
 #include "mediatek/cust_oppo20361_camera.dtsi"
 //#include "mediatek/cust_mt6765_touch_1080x1920.dtsi"
 /*End of this file, DO NOT ADD ANYTHING HERE*/

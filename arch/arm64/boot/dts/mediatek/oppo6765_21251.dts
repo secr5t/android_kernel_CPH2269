@@ -1654,7 +1654,7 @@
 };
 //#endif
 
-#include "oppo6765_21251/cust.dtsi"
+//#include "oppo6765_21251/cust.dtsi"
 
 #include "mediatek/bat_setting/mt6765_battery_prop_21251.dtsi"
 #include "mediatek/cust_mt6765_camera_parkerb.dtsi"

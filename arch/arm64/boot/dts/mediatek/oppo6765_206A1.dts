@@ -1418,7 +1418,7 @@
 };
 //#endif
 
-#include "oppo6765_206A1/cust.dtsi"
+//#include "oppo6765_206A1/cust.dtsi"
 #include "mediatek/cust_mt6765_camera.dtsi"
 #include "mediatek/cust_mt6765_touch_1080x1920.dtsi"
 /*End of this file, DO NOT ADD ANYTHING HERE*/
