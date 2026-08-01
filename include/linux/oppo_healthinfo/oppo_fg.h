@@ -1,5 +1,10 @@
-#ifndef _FG_H_
-#define _FG_H_
+/* SPDX-License-Identifier: GPL-2.0-only */
+/*
+ * Copyright (C) 2020 Oplus. All rights reserved.
+ */
+
+#ifndef _OPPO_FG_H_
+#define _OPPO_FG_H_
 
 #include <linux/cred.h>
 #include "../fs/fg_uid/fg_uid.h"
@@ -38,4 +43,4 @@ static inline bool is_fg(int uid)
 	return false;
 }
 #endif
-#endif /*_FG_H_*/
+#endif /*_OPPO_FG_H_*/

@@ -30,7 +30,7 @@ struct jank_s_state{
 	int cnt;
 };
 
-struct jank_monitor_info {
+struct oppo_jank_monitor_info {
 	u64 runnable_state;
 	u64 ltt_running_state; /* ns */
 	u64 big_running_state; /* ns */
