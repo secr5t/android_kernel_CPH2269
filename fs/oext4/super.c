@@ -15,8 +15,6 @@
  *
  *  Big-endian to little-endian byte-swapping/bitmaps by
  *        David S. Miller (davem@caip.rutgers.edu), 1995
- *
- *  Copyright (C) 2020 Oplus. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -87,10 +85,7 @@ static void ext4_unregister_li_request(struct super_block *sb);
 static void ext4_clear_request_list(void);
 static struct inode *ext4_get_journal_inode(struct super_block *sb,
 					    unsigned int journal_inum);
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-static void ext4_umount_begin(struct super_block *sb);
-extern void ext4_stop_discard_thread(struct ext4_sb_info *sbi);
-#endif
+
 /*
  * Lock ordering
  *
@@ -981,17 +976,6 @@ static void ext4_put_super(struct super_block *sb)
 	int aborted = 0;
 	int i, err;
 
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-        /* support ext4 defrag */
-	if (!sb_rdonly(sb) && test_opt2(sb, BG_DEFRAG)) {
-		e4defrag_exit(sb);
-	}
-#endif
-
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-        //add for ext4 async discard suppot
-	destroy_discard_cmd_control(sbi);
-#endif
 	ext4_unregister_li_request(sb);
 	ext4_quota_off_umount(sb);
 
@@ -1471,9 +1455,6 @@ static const struct super_operations ext4_sops = {
 	.unfreeze_fs	= ext4_unfreeze,
 	.statfs		= ext4_statfs,
 	.remount_fs	= ext4_remount,
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-	.umount_begin   = ext4_umount_begin,
-#endif
 	.show_options	= ext4_show_options,
 #ifdef CONFIG_QUOTA
 	.quota_read	= ext4_quota_read,
@@ -1511,16 +1492,8 @@ enum {
 	Opt_nomblk_io_submit, Opt_block_validity, Opt_noblock_validity,
 	Opt_inode_readahead_blks, Opt_journal_ioprio,
 	Opt_dioread_nolock, Opt_dioread_lock,
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-        //add for ext4 async discard suppot
-	Opt_async_discard, Opt_noasync_discard,
-#endif
 	Opt_discard, Opt_nodiscard, Opt_init_itable, Opt_noinit_itable,
 	Opt_max_dir_size_kb, Opt_nojournal_checksum, Opt_nombcache,
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-        /* support ext4 defrag */
-	Opt_defrag,
-#endif
 };
 
 static const match_table_t tokens = {
@@ -1600,11 +1573,6 @@ static const match_table_t tokens = {
 	{Opt_dioread_lock, "dioread_lock"},
 	{Opt_discard, "discard"},
 	{Opt_nodiscard, "nodiscard"},
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-        //add for ext4 async discard suppot
-	{Opt_async_discard, "async_discard"},
-	{Opt_noasync_discard, "noasync_discard"},
-#endif
 	{Opt_init_itable, "init_itable=%u"},
 	{Opt_init_itable, "init_itable"},
 	{Opt_noinit_itable, "noinit_itable"},
@@ -1618,10 +1586,6 @@ static const match_table_t tokens = {
 	{Opt_removed, "reservation"},	/* mount option from ext2/3 */
 	{Opt_removed, "noreservation"}, /* mount option from ext2/3 */
 	{Opt_removed, "journal=%u"},	/* mount option from ext2/3 */
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-        /* support ext4 defrag */
-	{Opt_defrag, "defrag=%s"},	/* background on-line defrag */
-#endif
 	{Opt_err, NULL},
 };
 
@@ -1751,11 +1715,6 @@ static const struct mount_opts {
 	 MOPT_EXT4_ONLY | MOPT_SET},
 	{Opt_dioread_lock, EXT4_MOUNT_DIOREAD_NOLOCK,
 	 MOPT_EXT4_ONLY | MOPT_CLEAR},
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-        //add for ext4 async discard suppot
-	{Opt_async_discard, EXT4_MOUNT2_ASYNC_DISCARD, MOPT_SET},
-	{Opt_noasync_discard, EXT4_MOUNT2_ASYNC_DISCARD, MOPT_CLEAR},
-#endif
 	{Opt_discard, EXT4_MOUNT_DISCARD, MOPT_SET},
 	{Opt_nodiscard, EXT4_MOUNT_DISCARD, MOPT_CLEAR},
 	{Opt_delalloc, EXT4_MOUNT_DELALLOC,
@@ -1837,10 +1796,6 @@ static const struct mount_opts {
 	{Opt_inlinecrypt, EXT4_MOUNT_INLINECRYPT, MOPT_NOSUPPORT},
 #endif
 	{Opt_nombcache, EXT4_MOUNT_NO_MBCACHE, MOPT_SET},
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-        /* support ext4 defrag */
-	{Opt_defrag, 0, MOPT_EXT4_ONLY | MOPT_STRING},
-#endif
 	{Opt_err, 0, 0}
 };
 
@@ -2113,32 +2068,6 @@ static int handle_mount_opt(struct super_block *sb, char *opt, int token,
 		sbi->s_mount_opt |= m->mount_opt;
 	} else if (token == Opt_data_err_ignore) {
 		sbi->s_mount_opt &= ~m->mount_opt;
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-	} else if (token == Opt_async_discard) {
-		set_opt2(sb, ASYNC_DISCARD);
-	} else if (token == Opt_noasync_discard) {
-		clear_opt2(sb, ASYNC_DISCARD);
-#endif
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-        /* support ext4 defrag */
-	} else if (token == Opt_defrag) {
-		char *name = match_strdup(&args[0]);
-		if (!name) {
-			ext4_msg(sb, KERN_ERR, "error: could not dup "
-				 "defrag option");
-			return -1;
-		}
-		if (strlen(name) == 2 && !strncmp(name, "on", 2)) {
-			set_opt2(sb, BG_DEFRAG);
-		} else if (strlen(name) == 3 && !strncmp(name, "off", 3)) {
-			clear_opt2(sb, BG_DEFRAG);
-		} else {
-			ext4_msg(sb, KERN_ERR, "error: invalid defrag option");
-			kfree(name);
-			return -1;
-		}
-		kfree(name);
-#endif
 	} else {
 		if (!args->from)
 			arg = 1;
@@ -2300,19 +2229,6 @@ static int _ext4_show_options(struct seq_file *seq, struct super_block *sb,
 		if (((m->flags & (MOPT_SET|MOPT_CLEAR)) == 0) ||
 		    (m->flags & MOPT_CLEAR_ERR))
 			continue;
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-		if (m->token == Opt_async_discard) {
-			if (test_opt2(sb, ASYNC_DISCARD)) {
-				SEQ_OPTS_PRINT("%s", token2str(m->token));
-			}
-			continue;
-		} else if (m->token == Opt_noasync_discard) {
-			if (!test_opt2(sb, ASYNC_DISCARD)) {
-				SEQ_OPTS_PRINT("%s", token2str(m->token));
-			}
-			continue;
-		}
-#endif
 		if (!nodefs && !(m->mount_opt & (sbi->s_mount_opt ^ def_mount_opt)))
 			continue; /* skip if same as the default */
 		if ((want_set &&
@@ -2370,12 +2286,6 @@ static int _ext4_show_options(struct seq_file *seq, struct super_block *sb,
 		SEQ_OPTS_PUTS("data_err=abort");
 	if (DUMMY_ENCRYPTION_ENABLED(sbi))
 		SEQ_OPTS_PUTS("test_dummy_encryption");
-
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-        /* support ext4 defrag */
-	if (!sb_rdonly(sb) && test_opt2(sb, BG_DEFRAG))
-		SEQ_OPTS_PUTS("defrag=on");
-#endif
 
 	ext4_show_quota_options(seq, sb);
 	return 0;
@@ -4041,13 +3951,6 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 	}
 #endif
 
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-        //add for ext4 async discard suppot
-	if (test_opt2(sb, ASYNC_DISCARD) && test_opt(sb,DISCARD)) {
-        clear_opt(sb, DISCARD);
-        ext4_msg(sb, KERN_WARNING, "mount option discard/async_discard conflict, use async_discard default");
-    }
-#endif
 	if (test_opt(sb, DATA_FLAGS) == EXT4_MOUNT_JOURNAL_DATA) {
 		printk_once(KERN_WARNING "EXT4-fs: Warning: mounting "
 			    "with data=journal disables delayed "
@@ -4766,25 +4669,13 @@ no_journal:
 	} else
 		descr = "out journal";
 
-	if (test_opt(sb, DISCARD)
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-        //add for ext4 async discard suppot
-        || test_opt2(sb, ASYNC_DISCARD)
-#endif
-    ) {
+	if (test_opt(sb, DISCARD)) {
 		struct request_queue *q = bdev_get_queue(sb->s_bdev);
 		if (!blk_queue_discard(q))
 			ext4_msg(sb, KERN_WARNING,
 				 "mounting with \"discard\" option, but "
 				 "the device does not support discard");
 	}
-
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-        /* support ext4 defrag */
-	if (!sb_rdonly(sb) && test_opt2(sb, BG_DEFRAG)) {
-		e4defrag_init(sb);
-	}
-#endif
 
 	if (___ratelimit(&ext4_mount_msg_ratelimit, "EXT4-fs mount"))
 		ext4_msg(sb, KERN_INFO, "mounted filesystem with%s. "
@@ -4802,16 +4693,6 @@ no_journal:
 	ratelimit_state_init(&sbi->s_msg_ratelimit_state, 5 * HZ, 10);
 
 	kfree(orig_data);
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-        //add for ext4 async discard suppot
-	if (test_opt2(sb, ASYNC_DISCARD)) {
-		sbi->interval_time = DEF_IDLE_INTERVAL;
-		err = create_discard_cmd_control(sbi);
-		if (err)
-			ext4_msg(sb, KERN_ERR, "mount creat async discard thread fail");
-    }
-	ext4_update_time(sbi);
-#endif
 	return 0;
 
 cantfind_ext4:
@@ -5432,19 +5313,6 @@ static int ext4_unfreeze(struct super_block *sb)
 	return 0;
 }
 
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-static void ext4_umount_begin(struct super_block *sb)
-{
-	/*
-	 * this is called at the begin of umount to stop discard thread
-	 */
-	if (test_opt2(sb, ASYNC_DISCARD)) {
-		ext4_msg(sb, KERN_WARNING, "stopping discard thread...");
-		ext4_stop_discard_thread(EXT4_SB(sb));
-	}
-}
-#endif
-
 /*
  * Structure to save mount options for ext4_remount's benefit
  */
@@ -5583,12 +5451,6 @@ static int ext4_remount(struct super_block *sb, int *flags, char *data)
 		}
 
 		if (*flags & SB_RDONLY) {
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-        /* support ext4 defrag */
-			if (test_opt2(sb, BG_DEFRAG)) {
-				e4defrag_exit(sb);
-			}
-#endif
 			err = sync_filesystem(sb);
 			if (err < 0)
 				goto restore_opts;
@@ -5697,15 +5559,6 @@ static int ext4_remount(struct super_block *sb, int *flags, char *data)
 		if (err)
 			goto restore_opts;
 	}
-
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-        /* support ext4 defrag */
-	if (!sb_rdonly(sb) && test_opt2(sb, BG_DEFRAG)) {
-		e4defrag_init(sb);
-	} else {
-		e4defrag_exit(sb);
-	}
-#endif
 
 #ifdef CONFIG_QUOTA
 	/* Release old quota file names */
@@ -6371,19 +6224,8 @@ static int __init ext4_init_fs(void)
 	err = register_filesystem(&ext4_fs_type);
 	if (err)
 		goto out;
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-        /* support ext4 defrag */
-	err = e4defrag_init_fs();
-	if (err)
-		goto out_defrag;
-#endif
-	return 0;
 
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-        /* support ext4 defrag */
-out_defrag:
-	e4defrag_exit_fs();
-#endif
+	return 0;
 out:
 	unregister_as_ext2();
 	unregister_as_ext3();
@@ -6406,10 +6248,6 @@ out6:
 
 static void __exit ext4_exit_fs(void)
 {
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-        /* support ext4 defrag */
-	e4defrag_exit_fs();
-#endif
 	ext4_destroy_lazyinit_thread();
 	unregister_as_ext2();
 	unregister_as_ext3();

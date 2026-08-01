@@ -2,8 +2,6 @@
 /*
  * Copyright (c) 2003-2006, Cluster File Systems, Inc, info@clusterfs.com
  * Written by Alex Tomas <alex@clusterfs.com>
- *
- *  Copyright (C) 2020 Oplus. All rights reserved.
  */
 
 
@@ -1464,25 +1462,10 @@ static void mb_free_blocks(struct inode *inode, struct ext4_buddy *e4b,
 	}
 
 	/* let's maintain fragments counter */
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-        /* support ext4 defrag */
-	if (left_is_free && right_is_free)
-		e4b->bd_info->bb_fragments--;
-	else if (!left_is_free && !right_is_free) {
-		unsigned free, fragments;
-		e4b->bd_info->bb_fragments++;
-		free = e4b->bd_info->bb_free;
-		fragments = e4b->bd_info->bb_fragments;
-		if (need_defrag(e4b->bd_sb, free, fragments)) {
-			e4defrag_wake_up_thread(e4b->bd_sb);
-		}
-	}
-#else
 	if (left_is_free && right_is_free)
 		e4b->bd_info->bb_fragments--;
 	else if (!left_is_free && !right_is_free)
 		e4b->bd_info->bb_fragments++;
-#endif
 
 	/* buddy[0] == bd_bitmap is a special case, so handle
 	 * it right away and let mb_buddy_mark_free stay free of
@@ -1597,24 +1580,10 @@ static int mb_mark_used(struct ext4_buddy *e4b, struct ext4_free_extent *ex)
 		mlen = !mb_test_bit(start - 1, e4b->bd_bitmap);
 	if (start + len < EXT4_SB(e4b->bd_sb)->s_mb_maxs[0])
 		max = !mb_test_bit(start + len, e4b->bd_bitmap);
-#ifdef CONFIG_EXT4_FS_DEFRAG
-        /* support ext4 defrag */
-	if (mlen && max) {
-		unsigned free, fragments;
-		e4b->bd_info->bb_fragments++;
-		free = e4b->bd_info->bb_free;
-		fragments = e4b->bd_info->bb_fragments;
-		if (need_defrag(e4b->bd_sb, free, fragments)) {
-			e4defrag_wake_up_thread(e4b->bd_sb);
-		}
-	} else if (!mlen && !max)
-		e4b->bd_info->bb_fragments--;
-#else
 	if (mlen && max)
 		e4b->bd_info->bb_fragments++;
 	else if (!mlen && !max)
 		e4b->bd_info->bb_fragments--;
-#endif
 
 	/* let's maintain buddy itself */
 	while (len) {
@@ -5407,258 +5376,3 @@ out_unload:
 
 	return error;
 }
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-//add for ext4 async discard suppot
-/**
- * ext4_trim_group_partial_seq -- function to trim all free space in alloc. group
- * @sb:			super block for file system
- * @group:		group to be trimmed
- * @start:		first group block to examine
- * @max:		last group block to examine
- * @minblocks:		minimum extent block count
- * @blkdev_flags:	flags for the block device
- * @dcc:			discard cmd control
- * @dpolicy:		discard policy
- *
- * ext4_trim_group_seq_partial walks through group's buddy bitmap searching for free
- * extents. When the free block is found, ext4_trim_extent is called to TRIM
- * the extent.
- *
- *
- * ext4_trim_group_seq_partial walks through group's block bitmap searching for free
- * extents. When the free extent is found, mark it as used in group buddy
- * bitmap. Then issue a TRIM command on this extent and free the extent in
- * the group buddy bitmap. This is done until whole group is scanned.
- */
-static ext4_grpblk_t
-ext4_trim_group_seq_partial(struct super_block *sb, ext4_group_t group,
-		   ext4_grpblk_t start, ext4_grpblk_t max,
-		   ext4_grpblk_t minblocks, struct discard_cmd_control *dcc)
-{
-	void *bitmap;
-	void *bitmap_last_trimmed_backup = dcc->groups_block_bitmap + (EXT4_SB(sb)->s_clusters_per_group/8) * group;
-	ext4_grpblk_t next, next_backup, free_count = 0;
-	struct ext4_buddy e4b;
-	int ret = 0, issued = 0;
-
-	ret = ext4_mb_load_buddy(sb, group, &e4b);
-	if (ret) {
-		ext4_error(sb, "Error in loading buddy "
-				"information for %u", group);
-		return ret;
-	}
-	bitmap = e4b.bd_bitmap;
-
-	ext4_lock_group(sb, group);
-	if (EXT4_MB_GRP_WAS_TRIMMED(e4b.bd_info))
-		goto skip_to_next_group;
-
-	start = (e4b.bd_info->bb_first_free > start) ?
-		e4b.bd_info->bb_first_free : start;
-
-	while (start <= max) {
-		start = mb_find_next_zero_bit(bitmap, max + 1, start);
-		if (start > max)
-			break;
-		next = mb_find_next_bit(bitmap, max + 1, start);
-
-		next_backup = mb_find_next_bit(bitmap_last_trimmed_backup, max + 1, start);
-
-		/*always save the next to be trimed point*/
-		dcc->blk_offset = start;
-
-		/*check if there is at least one block between start and next whose state changed from "1" to "0" */
-		if (((next - start) >= minblocks) && (next_backup < next)) {
-			/*check if shoud be aware of IO loading*/
-			if (dcc->dpolicy.io_aware &&
-				((next - start) < dcc->dpolicy.io_aware_gran) &&
-				!is_ext4_idle(EXT4_SB(sb))) {
-				dcc->cnt_io_interrupted++;
-				dcc->io_interrupted = true;
-				ret = issued;
-				goto out;
-			}
-
-			/*check the issued trim per round*/
-			if (issued >= dcc->dpolicy.max_requests) {
-				ret = issued;
-				goto out;
-			}
-
-			ret = ext4_trim_extent(sb, start,
-					       next - start, group, &e4b);
-			if (ret && ret != -EOPNOTSUPP)
-				break;
-			ret = 0;
-			dcc->issued_discard++;
-			issued++;
-		}
-		free_count += next - start;
-		start = next + 1;
-
-		if (fatal_signal_pending(current)) {
-			ret = -ERESTARTSYS;
-			break;
-		}
-
-		if (need_resched()) {
-			ext4_unlock_group(sb, group);
-			cond_resched();
-			ext4_lock_group(sb, group);
-		}
-
-		if ((e4b.bd_info->bb_free - free_count) < minblocks)
-			break;
-	}
-
-	if (!ret) {
-		dcc->total_trimed_groups++;
-skip_to_next_group:
-		/*this group is full trimed, update to the next to be trimed point*/
-		dcc->group_start = group + 1;
-		dcc->blk_offset = 0;
-
-		ret = issued;
-		/* backup the trimmed group block bitmap */
-		memcpy(bitmap_last_trimmed_backup, e4b.bd_bitmap, (max+7)/8);
-		EXT4_MB_GRP_SET_TRIMMED(e4b.bd_info);
-	}
-out:
-	ext4_unlock_group(sb, group);
-	ext4_mb_unload_buddy(&e4b);
-	return ret;
-}
-
-/**
- * ext4_trim_groups() -- trim all groups function
- * @sb:			superblock for filesystem
- * @dcc:		discard cmd control
- * @blkdev_flags:	flags for the block device
- * @dpolicy:		discard policy
- *
- * minlen:	minimum extent length in Blocks
- * ext4_trim_groups try to go through all allocation groups.
- * For each such a group ext4_trim_group_seq_partial function
- * is invoked try to trim free space according to dpolicy.
- */
-int ext4_trim_groups(struct super_block *sb,  struct discard_cmd_control *dcc)
-{
-	struct ext4_group_info *grp;
-	ext4_group_t group, first_group, last_group;
-	ext4_grpblk_t cnt = 0, first_cluster, last_cluster;
-	uint64_t end, minlen, trimmed = 0;
-	ext4_fsblk_t max_blks = ext4_blocks_count(EXT4_SB(sb)->s_es);
-	int ret = 0;
-
-	minlen = EXT4_NUM_B2C(EXT4_SB(sb), dcc->dpolicy.granularity);
-	if (minlen > EXT4_CLUSTERS_PER_GROUP(sb))
-		return -EINVAL;
-
-	/* Determine first and last group to examine based on start and end */
-	end = max_blks - 1;
-	ext4_get_group_no_and_offset(sb, (ext4_fsblk_t) end,
-				     &last_group, &last_cluster);
-	first_group = dcc->group_start;
-	first_cluster = dcc->blk_offset;
-	if (first_group > last_group)
-		first_group = 0;
-	if (first_cluster >= EXT4_CLUSTERS_PER_GROUP(sb))
-		first_cluster = 0;
-
-	/* end now represents the last cluster to discard in this group */
-	end = EXT4_CLUSTERS_PER_GROUP(sb) - 1;
-
-	for (group = first_group; group <= last_group; group++) {
-		grp = ext4_get_group_info(sb, group);
-		/* We only do this if the grp has never been initialized */
-		if (unlikely(EXT4_MB_GRP_NEED_INIT(grp))) {
-			ret = ext4_mb_init_group(sb, group, GFP_NOFS);
-			if (ret)
-				break;
-		}
-
-		/* update to the next to be trimed point */
-		dcc->group_start = group;
-		dcc->blk_offset = first_cluster;
-
-		/*
-		 * For all the groups except the last one, last cluster will
-		 * always be EXT4_CLUSTERS_PER_GROUP(sb)-1, so we only need to
-		 * change it for the last group, note that last_cluster is
-		 * already computed earlier by ext4_get_group_no_and_offset()
-		 */
-		if (group == last_group)
-			end = last_cluster;
-
-		if (grp->bb_free >= minlen) {
-			cnt = ext4_trim_group_seq_partial(sb, group, first_cluster,
-						end, minlen, dcc);
-			if (cnt < 0 || dcc->io_interrupted) {
-				ret = cnt;
-				break;
-			}
-			trace_printk("discard info:group:%d, internal offset:%d, end:%lld, minlen:%lld, trimed cnt:%d\n",
-									group, first_cluster, end, minlen, cnt);
-			trimmed += cnt;
-
-			/* Check the total issued trim per round */
-			if (trimmed >= dcc->dpolicy.max_requests) {
-				ret = trimmed;
-				break;
-			}
-		}
-
-		/*
-		 * For every group except the first one, we are sure
-		 * that the first cluster to discard will be cluster #0.
-		 */
-		first_cluster = 0;
-	}
-
-	return ret;
-}
-#endif
-
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-/* support ext4 defrag */
-/**
- * ext4_mb_query_group_info() -- query the group info
- * @first_group: first block group to scan
- * @nr_ro_scan: number block groups to scan
- * @match_fn: matching function
- * @reverse: scan in reverse order if true
- * return true if we found a group matched, otherwise false
- */
-bool ext4_mb_query_group_info(struct super_block * sb,
-			 ext4_group_t first_group, ext4_group_t nr_to_scan,
-			 bool(*match_fn) (struct ext4_group_info * grp,
-					  ext4_group_t group, void *priv),
-			 void *priv, bool reverse)
-{
-	struct ext4_group_info *grp;
-	ext4_group_t n, group, ngroups;
-	bool found = false;
-
-	ngroups = ext4_get_groups_count(sb);
-	if (unlikely(first_group > ngroups))
-		first_group %= ngroups;
-	if (unlikely(nr_to_scan > ngroups))
-		nr_to_scan = ngroups;
-
-	for (n = 0; n < nr_to_scan; n++) {
-		group = reverse ? first_group - n : first_group + n;
-		if (group >= ngroups)
-			group = reverse ? group + ngroups : group - ngroups;
-		grp = ext4_get_group_info(sb, group);
-		/* We only do this if the grp has never been initialized */
-		if (unlikely(EXT4_MB_GRP_NEED_INIT(grp))) {
-			if (ext4_mb_init_group(sb, group, GFP_NOFS))
-				break;
-		}
-		found = match_fn(grp, group, priv);
-		if (found)
-			break;
-	}
-	return found;
-}
-#endif

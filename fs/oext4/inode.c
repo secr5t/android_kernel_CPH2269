@@ -17,8 +17,6 @@
  *	(jj@sunsite.ms.mff.cuni.cz)
  *
  *  Assorted race fixes, rewrite of ext4_get_block() by Al Viro, 2000
- *
- *  Copyright (C) 2020 Oplus. All rights reserved.
  */
 
 #include <linux/fs.h>
@@ -1483,10 +1481,7 @@ errout:
 		if (inode->i_nlink)
 			ext4_orphan_del(NULL, inode);
 	}
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-        //add for ext4 async discard suppot
-	ext4_update_time(EXT4_SB(inode->i_sb));
-#endif
+
 	return ret ? ret : copied;
 }
 
@@ -1605,10 +1600,7 @@ errout:
 		if (inode->i_nlink)
 			ext4_orphan_del(NULL, inode);
 	}
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-        //add for ext4 async discard suppot
-	ext4_update_time(EXT4_SB(inode->i_sb));
-#endif
+
 	return ret ? ret : copied;
 }
 
@@ -4349,8 +4341,6 @@ int ext4_break_layouts(struct inode *inode)
 
 int ext4_punch_hole(struct inode *inode, loff_t offset, loff_t length)
 {
-//#if 0
-#if !defined(CONFIG_OPLUS_SYSTEM_KERNEL_QCOM)
 	struct super_block *sb = inode->i_sb;
 	ext4_lblk_t first_block, stop_block;
 	struct address_space *mapping = inode->i_mapping;
@@ -4493,12 +4483,6 @@ out_dio:
 out_mutex:
 	inode_unlock(inode);
 	return ret;
-#else
-	/*
-	 * Disabled as per b/28760453
-	 */
-	return -EOPNOTSUPP;
-#endif
 }
 
 int ext4_inode_attach_jinode(struct inode *inode)
@@ -4606,10 +4590,6 @@ int ext4_truncate(struct inode *inode)
 
 	if (inode->i_size & (inode->i_sb->s_blocksize - 1))
 		ext4_block_truncate_page(handle, mapping, inode->i_size);
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-	//add for ext4 async discard suppot
-	ext4_update_time(EXT4_SB(inode->i_sb));
-#endif
 
 	/*
 	 * We add the inode to the orphan list, so that if this
@@ -4992,14 +4972,6 @@ struct inode *__ext4_iget(struct super_block *sb, unsigned long ino,
 		}
 	} else
 		ei->i_extra_isize = 0;
-
-#ifdef CONFIG_OPLUS_FEATURE_EXT4_DEFRAG
-        /* support ext4 defrag */
-	if (unlikely(!raw_inode->i_links_count && !raw_inode->i_mode)) {
-		ret = -ESTALE;
-		goto bad_inode;
-	}
-#endif
 
 	/* Precompute checksum seed for inode metadata */
 	if (ext4_has_metadata_csum(sb)) {

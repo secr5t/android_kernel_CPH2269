@@ -368,10 +368,8 @@ static const struct vm_operations_struct ext4_file_vm_ops = {
 	.fault		= ext4_filemap_fault,
 	.map_pages	= filemap_map_pages,
 	.page_mkwrite   = ext4_page_mkwrite,
-#if defined(CONFIG_MTK_PLATFORM)
 #ifdef CONFIG_SPECULATIVE_PAGE_FAULT
 	.suitable_for_spf = true,
-#endif
 #endif
 };
 

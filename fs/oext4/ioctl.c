@@ -6,8 +6,6 @@
  * Remy Card (card@masi.ibp.fr)
  * Laboratoire MASI - Institut Blaise Pascal
  * Universite Pierre et Marie Curie (Paris VI)
- *
- *  Copyright (C) 2020 Oplus. All rights reserved.
  */
 
 #include <linux/fs.h>
@@ -406,10 +404,6 @@ static int ext4_ioctl_setflags(struct inode *inode,
 	inode->i_ctime = current_time(inode);
 
 	err = ext4_mark_iloc_dirty(handle, inode, &iloc);
-#if defined(CONFIG_OPLUS_FEATURE_EXT4_ASYNC_DISCARD)
-        //add for ext4 async discard suppot
-	ext4_update_time(EXT4_SB(inode->i_sb));
-#endif
 flags_err:
 	ext4_journal_stop(handle);
 	if (err)
