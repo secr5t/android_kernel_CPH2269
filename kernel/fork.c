@@ -2266,7 +2266,7 @@ static __latent_entropy struct task_struct *copy_process(
 			list_add_tail_rcu(&p->tasks, &init_task.tasks);
 #if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_ION) && defined(CONFIG_DUMP_TASKS_MEM)
 			INIT_LIST_HEAD(&p->user_tasks);
-			update_user_tasklist(p);
+			// update_user_tasklist(p);
 #endif
 			attach_pid(p, PIDTYPE_TGID);
 			attach_pid(p, PIDTYPE_PGID);

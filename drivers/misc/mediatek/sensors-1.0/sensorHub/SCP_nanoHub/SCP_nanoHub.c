@@ -928,7 +928,7 @@ static void SCP_sensorHub_init_sensor_state(void)
 	mSensorState[SENSOR_TYPE_SAR].sensorType = SENSOR_TYPE_SAR;
 	mSensorState[SENSOR_TYPE_SAR].timestamp_filter = false;
 	#ifdef OPLUS_FEATURE_SENSOR_ALGORITHM
-	oppo_init_sensor_state(mSensorState);
+	// oppo_init_sensor_state(mSensorState);
 	#endif /*OPLUS_FEATURE_SENSOR_ALGORITHM*/
 
 }

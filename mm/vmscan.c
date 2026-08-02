@@ -1163,8 +1163,8 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 		bool dirty, writeback;
 
 #if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-		if (sc->walk && is_reclaim_should_cancel(sc->walk))
-			break;
+		//if (sc->walk && is_reclaim_should_cancel(sc->walk))
+		//	break;
 #endif
 		cond_resched();
 
