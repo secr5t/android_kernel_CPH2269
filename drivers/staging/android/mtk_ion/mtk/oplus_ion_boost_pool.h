@@ -5,8 +5,8 @@
 #include <linux/types.h>
 
 //#include "ion.h"
-#include <linux/msm_ion.h>
-#include "ion_msm_system_heap.h"
+//#include <linux/msm_ion.h>
+//#include "ion_msm_system_heap.h"
 
 #define LOWORDER_WATER_MASK (64*4)
 #define MAX_POOL_SIZE (256*64*4)
