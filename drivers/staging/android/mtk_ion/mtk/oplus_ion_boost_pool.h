@@ -32,11 +32,12 @@ int boost_pool_free(struct ion_boost_pool *pool, struct page *page,
 int boost_pool_shrink(struct ion_boost_pool *boost_pool,
 		      void *pool, gfp_t gfp_mask,
 		      int nr_to_scan);
+
 struct ion_boost_pool *boost_pool_create(void *heap,
 					 unsigned int ion_flag,
 					 unsigned int nr_pages,
-					 struct proc_dir_entry *root_dir,
 					 char *name);
+
 void boost_pool_wakeup_process(struct ion_boost_pool *pool);
 void boost_pool_dec_high(struct ion_boost_pool *pool, int nr_pages);
 void boost_pool_dump(struct ion_boost_pool *pool);
