@@ -24,11 +24,11 @@
 //#include <mt-plat/charger_class.h>
 //#include "../../../../../kernel-4.19/drivers/power/supply/mtk_charger.h"
 //#include "../../../../../kernel-4.19/drivers/power/supply/mtk_battery.h"
-#include <drivers/power/supply/charger_class.h>
-#include <drivers/power/supply/adapter_class.h>
-#include <drivers/power/supply/mtk_pd.h>
-#include <drivers/power/supply/mtk_charger_algorithm_class.h>
-#include <drivers/misc/mediatek/typec/tcpc/inc/tcpm.h>
+#include "../../supply/charger_class.h"
+#include "../../supply/adapter_class.h"
+#include "../../supply/mtk_pd.h"
+#include "../../supply/mtk_charger_algorithm_class.h"
+#include "../../../misc/mediatek/typec/tcpc/inc/tcpm.h"
 
 #define MAX_ALG_NO 10
 
