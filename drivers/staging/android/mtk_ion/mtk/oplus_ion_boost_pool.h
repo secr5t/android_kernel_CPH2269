@@ -36,6 +36,7 @@ int boost_pool_shrink(struct ion_boost_pool *boost_pool,
 struct ion_boost_pool *boost_pool_create(void *heap,
 					 unsigned int ion_flag,
 					 unsigned int nr_pages,
+					 struct proc_dir_entry *root_dir,
 					 char *name);
 
 void boost_pool_wakeup_process(struct ion_boost_pool *pool);
