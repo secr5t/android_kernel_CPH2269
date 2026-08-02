@@ -33,11 +33,8 @@ int boost_pool_shrink(struct ion_boost_pool *boost_pool,
 		      void *pool, gfp_t gfp_mask,
 		      int nr_to_scan);
 
-struct ion_boost_pool *boost_pool_create(void *heap,
-					 unsigned int ion_flag,
-					 unsigned int nr_pages,
-					 struct proc_dir_entry *root_dir,
-					 char *name);
+struct ion_boost_pool *_boost_pool_create_internal(void *a, ...);
+#define boost_pool_create(...) _boost_pool_create_internal(__VA_ARGS__)
 
 void boost_pool_wakeup_process(struct ion_boost_pool *pool);
 void boost_pool_dec_high(struct ion_boost_pool *pool, int nr_pages);
