@@ -3,9 +3,18 @@
  * Copyright (C) 2018-2020 Oplus. All rights reserved.
  */
 
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/fs.h>
+#include <linux/proc_fs.h>
+#include <linux/seq_file.h>
+#include <linux/slab.h>
 #include <linux/uaccess.h>
+#include <linux/of.h>
+#include <linux/of_device.h>
+#include <linux/of_gpio.h>
 
-//#ifdef OPLUS_FEATURE_SECURITY_COMMON
 #if CONFIG_OPPO_BSP_SECCOM_PLATFORM == 6763 || CONFIG_OPPO_BSP_SECCOM_PLATFORM == 6771 || CONFIG_OPPO_BSP_SECCOM_PLATFORM == 6885 \
 || CONFIG_OPPO_BSP_SECCOM_PLATFORM == 6785 || CONFIG_OPPO_BSP_SECCOM_PLATFORM == 6768 || CONFIG_OPPO_BSP_SECCOM_PLATFORM == 6765 \
 || CONFIG_OPPO_BSP_SECCOM_PLATFORM == 6893 || CONFIG_OPPO_BSP_SECCOM_PLATFORM == 6891
