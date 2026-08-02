@@ -6,6 +6,7 @@
 #include <linux/wait.h>
 #include <linux/proc_fs.h>
 #include <linux/device.h>
+#include <linux/mm.h>
 
 #define LOWORDER_WATER_MASK (64*4)
 #define MAX_POOL_SIZE (256*64*4)
@@ -23,9 +24,9 @@ struct ion_boost_pool {
 	void *pools[0];
 };
 
-struct page_info *boost_pool_allocate(struct ion_boost_pool *pool,
-				      unsigned long size,
-				      unsigned int max_order);
+struct page *boost_pool_allocate(struct ion_boost_pool *pool,
+				   unsigned long size,
+				   unsigned int max_order);
 int boost_pool_free(struct ion_boost_pool *pool, struct page *page,
 		    int order);
 int boost_pool_shrink(struct ion_boost_pool *boost_pool,
