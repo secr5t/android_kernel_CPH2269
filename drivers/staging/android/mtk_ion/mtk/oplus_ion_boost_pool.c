@@ -160,7 +160,7 @@ int boost_pool_shrink(struct ion_boost_pool *boost_pool,
 
 	pool_max_shrink = boost_pool_nr_pages(boost_pool);
 
-	if ((other_free + other_file > totalram_pages() / 10) ||
+	if ((other_free + other_file > totalram_pages / 10) ||
 	    (pool_max_shrink <= ori_low_pages))
 		return 0;
 
