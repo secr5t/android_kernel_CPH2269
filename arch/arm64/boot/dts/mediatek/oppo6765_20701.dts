@@ -1281,7 +1281,7 @@
 	};
 };
 /* touch end */
-//#include "oppo6765_20701/cust.dtsi"
+#include "oppo6765_20701/cust.dtsi"
 #include "mediatek/cust_mt6765_camera_20701.dtsi"
 /*#include "mediatek/cust_mt6765_touch_1080x1920.dtsi"*/
 /*End of this file, DO NOT ADD ANYTHING HERE*/

@@ -1533,6 +1533,6 @@
 //#endif
 
 #include "mediatek/bat_setting/mt6765_battery_prop_21281.dtsi"
-//#include "oppo6765_21281/cust.dtsi"
+#include "oppo6765_21281/cust.dtsi"
 #include "mediatek/cust_mt6765_camera_yogurta.dtsi"
 /*End of this file, DO NOT ADD ANYTHING HERE*/

@@ -1690,7 +1690,7 @@
 };
 //#endif
 
-//#include "oppo6765_20379/cust.dtsi"
+#include "oppo6765_20379/cust.dtsi"
 #include "mediatek/cust_mt6765_camera_parkera.dtsi"
 #include "mediatek/cust_mt6765_touch_1080x1920.dtsi"
 /*End of this file, DO NOT ADD ANYTHING HERE*/
