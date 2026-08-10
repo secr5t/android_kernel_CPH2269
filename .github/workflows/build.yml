@@ -1,4 +1,4 @@
-name: CI
+Name: CI
 
 on:
   workflow_dispatch:
@@ -12,6 +12,9 @@ jobs:
     name: Build Kernel
     runs-on: ubuntu-22.04
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Setup xxKSU
         run: |
           curl -LSs "https://raw.githubusercontent.com/backslashxx/KernelSU/refs/heads/master/kernel/setup.sh" | bash
