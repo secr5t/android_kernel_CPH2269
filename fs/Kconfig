@@ -316,6 +316,22 @@ source "fs/9p/Kconfig"
 
 endif # NETWORK_FILESYSTEMS
 
+#ifdef OPLUS_FEATURE_HEALTHINFO
+config FG_TASK_UID
+	bool "Enable /proc/fg_info/ if EXPERT"
+	default y
+	help
+	  Add foreground process optimize support to promote performance .
+#endif
+#ifdef OPLUS_FEATURE_HEALTHINFO
+config OPLUS_JANK_INFO
+	bool "Enable /proc/pid/jank_info if EXPERT"
+	default n
+	help
+	  Add jank monitor opt support .
+#endif
+
+
 source "fs/nls/Kconfig"
 source "fs/dlm/Kconfig"
 source "fs/unicode/Kconfig"
