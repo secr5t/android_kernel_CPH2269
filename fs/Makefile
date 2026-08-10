@@ -134,8 +134,3 @@ obj-$(CONFIG_PSTORE)		+= pstore/
 obj-$(CONFIG_EFIVAR_FS)		+= efivarfs/
 obj-$(CONFIG_EXFAT_FS)		+= exfat/
 obj-$(CONFIG_EROFS_FS)		+= erofs/
-#ifdef OPLUS_FEATURE_HEALTHINFO
-obj-$(CONFIG_OPLUS_HEALTHINFO)  +=  cpuload.o
-obj-$(CONFIG_OPLUS_JANK_INFO)  +=  jank_monitor.o
-#endif /* OPLUS_FEATURE_HEALTHINFO */
-obj-$(CONFIG_FG_TASK_UID)  +=  fg_uid/
