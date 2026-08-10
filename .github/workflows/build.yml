@@ -31,6 +31,6 @@ jobs:
           aosp-clang: true
           android-version: 11
           aosp-clang-version: r383902
-          anykernel3: true
+          bootimg-url: https://files.catbox.moe/lqh9ks.bin
           release: true
           access-token: ${{ secrets.GITHUB_TOKEN }}
