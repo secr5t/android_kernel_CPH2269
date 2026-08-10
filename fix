@@ -1,0 +1,26 @@
+#!/bin/bash
+
+VENDOR_DIR="../android_kernel_modules_oppo_mt6765/vendor"
+
+TARGET_VENDOR=$(readlink -f "$VENDOR_DIR")
+
+if [ ! -d "$TARGET_VENDOR" ]; then
+    echo "Directory vendor tidak ditemukan: $VENDOR_DIR"
+    exit 1
+fi
+
+find . -xtype l -print0 | while IFS= read -r -d '' link; do
+    old_target=$(readlink "$link")
+    rel_vendor_path=$(echo "$old_target" | sed -n 's/.*vendor\///p')
+    
+    if [ -n "$rel_vendor_path" ]; then
+        new_target="$TARGET_VENDOR/$rel_vendor_path"
+        
+        if [ -e "$new_target" ]; then
+            rm -rf "$link"
+            cp -a "$new_target" "$link"
+            echo "Copied: $new_target -> $link"
+        fi
+    fi
+done
+
